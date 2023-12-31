@@ -7,3 +7,4 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(monads_demo ${CMAKE_SOURCE_DIR}/src/monads_demo.cpp)
 target_include_directories(monads_demo PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_compile_options(monads_demo PUBLIC -Wall -Wextra -pedantic -Ofast)
