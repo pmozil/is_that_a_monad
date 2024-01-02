@@ -1,19 +1,26 @@
 #include "maybe.hpp"
 
-Maybe<double> multiply_by_ten(int const &val) {
+template <class T> Maybe<double> multiply_by_ten(T &&val) {
     constexpr float ten = 10.0F;
     return {ten * val};
 }
 
-Maybe<double> add_five(double const &val) {
+template <class T> Maybe<double> add_five(T &&val) {
+    constexpr float five = 5.0F;
+    return {five + val};
+}
+
+template <class T> Maybe<double> add_five_for_fmap(T &&val) {
     constexpr float five = 5.0F;
     return {five + val};
 }
 
 const std::function<Maybe<double>(int)> mul_ten =
-    std::function{multiply_by_ten};
+    std::function{multiply_by_ten<int>};
 const std::function<Maybe<double>(double)> addFive =
-    std::function{multiply_by_ten};
+    std::function{add_five<int>};
+const std::function<Maybe<double>(double)> addFive_fmap =
+    std::function{add_five_for_fmap<int>};
 
 template <class A>
     requires Monad<A, Maybe<A>, Maybe<A>>
@@ -43,4 +50,6 @@ int main() {
 
     std::cout << "A = ";
     print_maybe(a);
+
+    auto res = {}(addFive_fmap, a);
 }
