@@ -22,8 +22,8 @@ const std::function<Maybe<double>(double)> addFive =
 const std::function<Maybe<double>(double)> addFive_fmap =
     std::function{add_five_for_fmap<int>};
 
-template <class A>
-    requires Monad<A, Maybe<A>, Maybe<A>>
+template <class A, class B = A>
+    requires Monad<A, Maybe<B>, Maybe<A>>
 void print_maybe(Maybe<A> &mon) {
     std::cout << mon << std::endl;
 }

@@ -50,11 +50,7 @@ Maybe<B> fmap(std::function<B(A)> const func, Maybe<A> const &maybe) {
 template <class A, class B>
 constexpr auto operator>>=(std::function<Maybe<B>(A)> const func,
                            Maybe<A> const &maybe) {
-    if (!maybe) {
-        return Maybe<B>{};
-    }
-
-    return func(maybe);
+    return maybe ? func(maybe) : Maybe<B>{};
 }
 
 template <class A, class B>

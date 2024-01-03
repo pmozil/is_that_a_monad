@@ -24,13 +24,11 @@ Just look at how cool this looks!
 #include <concepts>
 #include <functional>
 
-template <class A_B, class FA, class FB> struct fmap {
-    FB operator()(A_B, FA &); // Fmap has to be astruct, kinda
-};
+template <class A_B, class FA, class FB> FB fmap(A_B, FA const &);
 
 template <class A_B, class FA, class FB>
 concept Functor = requires(A_B fmap_fn, FA &lhs) {
-    { fmap<A_B, FA, FB>{}(fmap_fn, lhs) } -> std::convertible_to<FB>;
+    { fmap<A_B, FA, FB>(fmap_fn, lhs) } -> std::convertible_to<FB>;
     // This is hiow you declate a requirement for the concept:
     // The value in the brackets is what the opeartion would
     // look like, and the value on the right is the type of the result
@@ -72,36 +70,40 @@ template <class T> struct Maybe {
 
 // The implemenation of the >>= operator required for the monad
 template <class A, class B>
-Maybe<B> operator>>=(std::function<Maybe<B>(A)> func, Maybe<A> const &maybe) {
-    return maybe.has_value ? func(maybe.value) : Maybe<B>();
+constexpr auto operator>>=(std::function<Maybe<B>(A)> const func,
+                           Maybe<A> const &maybe) {
+    return maybe ? func(maybe) : Maybe<B>{};
 }
 
 // The implemenation of the >> operator required for the monad
 template <class A, class B>
 Maybe<B> operator>>(Maybe<A> const &maybe_a, Maybe<B> const &maybe_b) {
-    return maybe_a.has_value ? Maybe<B>(maybe_b) : Maybe<B>();
+    return maybe_a ? Maybe<B>(maybe_b) : Maybe<B>();
 }
 
 // Peiople usually do the >>= throught fmap,
 // But this works too
 template <class A, class B>
-struct fmap<std::function<B(A)>, Maybe<A>, Maybe<B>> {
-    Maybe<B> operator()(std::function<B(A)> func, Maybe<A> &maybe) {
-        return maybe >>= func;
-    };
-};
+Maybe<B> fmap(std::function<B(A)> const func, Maybe<A> const &maybe) {
+    return maybe ? Maybe<B>{func(maybe)} : Maybe<B>{};
+}
 ```
 
 And now you could do stuff like this!
 ```cpp
 #include "maybe.hpp"
 
-Maybe<double> multiply_by_ten(int const &val) {
+template <class T> Maybe<double> multiply_by_ten(T &&val) {
     constexpr float ten = 10.0F;
     return {ten * val};
 }
 
-Maybe<double> add_five(double const &val) {
+template <class T> Maybe<double> add_five(T &&val) {
+    constexpr float five = 5.0F;
+    return {five + val};
+}
+
+template <class T> Maybe<double> add_five_for_fmap(T &&val) {
     constexpr float five = 5.0F;
     return {five + val};
 }
@@ -110,14 +112,15 @@ Maybe<double> add_five(double const &val) {
 // std::function<B(A)> != std::function<B(A const &)>
 // so I a currently searching for some better fix.
 const std::function<Maybe<double>(int)> mul_ten =
-    std::function{multiply_by_ten};
-
+    std::function{multiply_by_ten<int>};
 const std::function<Maybe<double>(double)> addFive =
-    std::function{multiply_by_ten};
+    std::function{add_five<int>};
+const std::function<Maybe<double>(double)> addFive_fmap =
+    std::function{add_five_for_fmap<int>};
 
 // This only prints monads)
-template <class A>
-    requires Monad<A, Maybe<A>, Maybe<A>>
+template <class A, class B = A>
+    requires Monad<A, Maybe<B>, Maybe<A>>
 void print_maybe(Maybe<A> &mon) {
     std::cout << mon << std::endl;
 }
@@ -144,5 +147,8 @@ int main() {
 
     std::cout << "A = ";
     print_maybe(a);
+
+    auto res = fmap(addFive_fmap, a);
+    std::cout << "RES = " << res << std::endl;
 }
 ```
