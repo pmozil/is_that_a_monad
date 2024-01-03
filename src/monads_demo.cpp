@@ -51,5 +51,6 @@ int main() {
     std::cout << "A = ";
     print_maybe(a);
 
-    auto res = {}(addFive_fmap, a);
+    auto res = fmap(addFive_fmap, a);
+    std::cout << "RES = " << res << std::endl;
 }

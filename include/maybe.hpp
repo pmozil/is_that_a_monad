@@ -34,40 +34,38 @@ template <class T> struct Maybe {
         return *this;
     }
 
+    operator bool() const { return has_value; }
+    operator T() const { return value; }
+
+  private:
     T value;
     bool has_value = false;
 };
 
 template <class A, class B>
-struct fmap<std::function<B(A)>, Maybe<A>, Maybe<B>> {
-    Maybe<B> operator()(std::function<B(A)> func, Maybe<A> const &maybe) {
-        if (!maybe.has_value) {
-            return Maybe<B>{};
-        }
-
-        return Maybe<B>(func(maybe.value));
-    };
-};
-
-template <class A, class B>
-constexpr auto operator>>=(std::function<Maybe<B>(A)> func,
-                           Maybe<A> const &maybe) {
-    if (!maybe.has_value) {
-        return Maybe<B>{};
-    }
-
-    return func(maybe.value);
+Maybe<B> fmap(std::function<B(A)> const func, Maybe<A> const &maybe) {
+    return maybe ? Maybe<B>{func(maybe)} : Maybe<B>{};
 }
 
 template <class A, class B>
-Maybe<B> operator>>(Maybe<A> const &maybe_a, Maybe<B> &maybe_b) {
-    return maybe_a.has_value ? Maybe<B>(maybe_b) : Maybe<B>();
+constexpr auto operator>>=(std::function<Maybe<B>(A)> const func,
+                           Maybe<A> const &maybe) {
+    if (!maybe) {
+        return Maybe<B>{};
+    }
+
+    return func(maybe);
+}
+
+template <class A, class B>
+Maybe<B> operator>>(Maybe<A> const &maybe_a, Maybe<B> const &maybe_b) {
+    return maybe_a ? Maybe<B>(maybe_b) : Maybe<B>();
 }
 
 template <class A>
 std::ostream &operator<<(std::ostream &stream, Maybe<A> const &maybe) {
-    if (maybe.has_value) {
-        stream << maybe.value;
+    if (maybe) {
+        stream << static_cast<A>(maybe);
     }
 
     return stream;
